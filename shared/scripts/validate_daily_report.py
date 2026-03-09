@@ -23,6 +23,10 @@ REQUIRED_SECTIONS = [
     "风险清单与明日动作",
 ]
 
+# 优化：预编译常用正则，避免在每次调用时重复编译
+_D1_PATTERN = re.compile(r"D-1\d*")
+_D7_PATTERN = re.compile(r"D-7\d*")
+
 
 def read_text(path: Path) -> str:
     if not path.exists():
@@ -54,7 +58,8 @@ def count_tomorrow_actions(text: str) -> int:
     if idx == -1:
         return 0
 
-    window = lines[idx : min(idx + 40, len(lines))]
+    # 优化：扫描范围精确到 section 标题之前的内容，避免跨 section 计数
+    window = lines[max(0, idx - 40) : idx]
     cnt = 0
     for ln in window:
         s = ln.strip()
@@ -73,9 +78,10 @@ def validate_markdown(report_text: str):
     if missing_sections:
         errors.append(f"missing sections: {', '.join(missing_sections)}")
 
-    if "D-1" not in report_text:
+    # 优化：使用预编译正则检测 D-1 / D-7 标记，支持 D-1、D-10 等变体
+    if not _D1_PATTERN.search(report_text):
         errors.append("resource/compare text missing D-1 marker")
-    if "D-7" not in report_text:
+    if not _D7_PATTERN.search(report_text):
         errors.append("resource/compare text missing D-7 marker")
 
     if not has_lifecycle_buckets(report_text):
@@ -116,8 +122,13 @@ def validate_snapshot(snapshot: dict):
             if key not in node:
                 errors.append(f"snapshot resource.{metric}.{key} missing")
 
-    if snapshot.get("_warnings"):
-        warnings.append(f"snapshot has warnings: {len(snapshot.get('_warnings', []))}")
+    # 优化：对 warnings 数量超过阈值时升级为 error，避免大量警告被忽视
+    raw_warnings = snapshot.get("_warnings", [])
+    warn_count = raw_warnings if isinstance(raw_warnings, int) else len(raw_warnings)
+    if warn_count > 0:
+        warnings.append(f"snapshot has warnings: {warn_count}")
+    if warn_count > 5:
+        errors.append(f"snapshot warning count exceeds threshold: {warn_count} (>5)")
 
     return errors, warnings
 

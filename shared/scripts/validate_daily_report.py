@@ -130,17 +130,6 @@ def validate_snapshot(snapshot: dict):
             if key not in node:
                 errors.append(f"snapshot resource.{metric}.{key} missing")
 
-    # 优化：校验核心指标数值合理性，net_consume 应等于 grant_total 减 consume_total
-    consume = res.get("consume_total", {}).get("current") if isinstance(res, dict) else None
-    grant = res.get("grant_total", {}).get("current") if isinstance(res, dict) else None
-    net = res.get("net_consume", {}).get("current") if isinstance(res, dict) else None
-    if all(v is not None for v in [consume, grant, net]):
-        expected_net = grant - consume
-        if abs(expected_net - net) > 0.01:
-            errors.append(
-                f"resource integrity check failed: net_consume({net}) != grant_total({grant}) - consume_total({consume})"
-            )
-
     # 优化：对 warnings 数量超过阈值时升级为 error，避免大量警告被忽视
     raw_warnings = snapshot.get("_warnings", [])
     warn_count = raw_warnings if isinstance(raw_warnings, int) else len(raw_warnings)

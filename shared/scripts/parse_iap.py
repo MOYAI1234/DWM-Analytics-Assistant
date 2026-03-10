@@ -108,7 +108,7 @@ def compare(cur_loc, prev_loc):
     all_locs = set(list(cur_loc.keys()) + prev_keys)
     for loc in all_locs:
         c = cur_loc.get(loc, {'rev': 0, 'cnt': 0, 'users': 0, 'arppu': 0})
-        p = prev_loc.get(prev_keys[0], {'rev': 0, 'cnt': 0, 'users': 0, 'arppu': 0}) if prev_keys else {'rev': 0, 'cnt': 0, 'users': 0, 'arppu': 0}
+        p = prev_loc.get(loc, {'rev': 0, 'cnt': 0, 'users': 0, 'arppu': 0}) if prev_keys else {'rev': 0, 'cnt': 0, 'users': 0, 'arppu': 0}
         if c['rev'] == 0 and p['rev'] == 0:
             continue
         result[loc] = {
@@ -189,9 +189,8 @@ def main():
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
             f.write(out)
-        # 追加写入摘要，便于运维快速查看
-        with open(args.output, 'w', encoding='utf-8') as f:
-            f.write(out)
+            f.write("\n\n")
+            f.write(format_summary(result))
         print(f'已输出到 {args.output}')
     else:
         print(out)

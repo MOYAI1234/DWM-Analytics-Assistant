@@ -58,8 +58,16 @@ def count_tomorrow_actions(text: str) -> int:
     if idx == -1:
         return 0
 
-    # 优化：扫描范围精确到 section 标题之前的内容，避免跨 section 计数
-    window = lines[max(0, idx - 40) : idx]
+    # 优化：扫描范围从「明日动作」标题之后开始，避免跨 section 计数
+    window = []
+    for ln in lines[idx + 1 :]:
+        if len(window) >= 40:
+            break
+        s = ln.strip()
+        if s in REQUIRED_SECTIONS:
+            break
+        window.append(ln)
+
     cnt = 0
     for ln in window:
         s = ln.strip()

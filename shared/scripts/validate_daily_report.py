@@ -26,6 +26,7 @@ REQUIRED_SECTIONS = [
 # 优化：预编译常用正则，避免在每次调用时重复编译
 _D1_PATTERN = re.compile(r"D-1\d*")
 _D7_PATTERN = re.compile(r"D-7\d*")
+_TOP_PATTERN = re.compile(r"Top[123]")
 
 
 def read_text(path: Path) -> str:

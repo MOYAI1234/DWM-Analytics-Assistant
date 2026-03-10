@@ -1,0 +1,32 @@
+# ============================================================
+# Qodo PR Agent 配置文件
+# 作用范围：整个仓库
+# ============================================================
+
+# ── GitHub 自动触发 ──────────────────────────────────────────
+[github_app]
+pr_commands = [
+    "/agentic_describe",
+    "/agentic_review"
+]
+# PR 有新 commit 推送时自动重新审查
+handle_push_trigger = true
+push_commands = [
+    "/agentic_review"
+]
+
+# ── 审查行为 ─────────────────────────────────────────────────
+[review_agent]
+# 同时在摘要视图 + 内联视图展示，最大化触发频率
+comments_location_policy = "both"
+
+# inline 注释严重性阈值：1=informational（最低，全部展示）
+inline_comments_severity_threshold = 1
+
+# 业务上下文补充说明，帮助 Qodo 理解本仓库的审查重点
+issues_user_guidelines = "This repo processes game analytics CSVs into JSON snapshots and markdown reports. Pay special attention to: data aggregation logic (off-by-one, boundary conditions, key alignment), file I/O correctness, regex semantics, and function redefinition."
+compliance_user_guidelines = ""
+
+# ── 代码建议中启用对话问题自动识别 ──────────────────────────
+[pr_code_suggestions]
+enable_chat_in_code_suggestions = true

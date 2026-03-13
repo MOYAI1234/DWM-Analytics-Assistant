@@ -96,14 +96,33 @@ print(f'解压完成：{os.path.basename(zips[0])} -> {actual_csv_dir}，共 {le
 "
 ```
 
-解压成功后，运行一键聚合脚本：
+解压成功后，运行一键聚合脚本（根据所用 Shell 选择对应写法，路径示例为 Windows 风格，Unix 下请改用正斜杠或相对路径）：
 
+**Windows CMD：**
+```cmd
+set PYTHONUTF8=1 && python D:/claudecode/monthly_report/skill/scripts/run_all.py ^
+  --data-dir "<actual_csv_dir>" ^
+  --month "<本月YYYY-MM>" ^
+  --prev-month "<上月YYYY-MM>" ^
+  --output D:/claudecode/monthly_report/skill/extracted_data.json
+```
+
+**PowerShell：**
+```powershell
+$env:PYTHONUTF8=1; python D:/claudecode/monthly_report/skill/scripts/run_all.py `
+  --data-dir "<actual_csv_dir>" `
+  --month "<本月YYYY-MM>" `
+  --prev-month "<上月YYYY-MM>" `
+  --output D:/claudecode/monthly_report/skill/extracted_data.json
+```
+
+**Unix/Bash（路径请改为 Unix 风格，如 ~/claudecode/...）：**
 ```bash
-PYTHONUTF8=1 python D:/claudecode/monthly_report/skill/scripts/run_all.py \
+PYTHONUTF8=1 python ~/claudecode/monthly_report/skill/scripts/run_all.py \
   --data-dir "<actual_csv_dir>" \
   --month "<本月YYYY-MM>" \
   --prev-month "<上月YYYY-MM>" \
-  --output D:/claudecode/monthly_report/skill/extracted_data.json
+  --output ~/claudecode/monthly_report/skill/extracted_data.json
 ```
 
 脚本会自动识别 CSV 文件并聚合所有章节数据，输出 `extracted_data.json`。

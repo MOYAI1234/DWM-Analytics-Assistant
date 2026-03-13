@@ -28,9 +28,9 @@ version: 0.4.0
 | `D:/claudecode/monthly_report/reports_daily/` | 日报存档目录，命名：`<产品名>日常监控 - YYYY-MM-DD.md` |
 | `D:/claudecode/monthly_report/skill/csv_mapping.json` | CSV 文件名映射（复用月报） |
 | `D:/claudecode/monthly_report/skill/style_guide.json` | 文风规范（复用月报） |
-| `C:/Users/69050/.claude/skills/daily-report/daily_section_registry.json` | 日报章节定义（v0.3） |
-| `C:/Users/69050/.claude/skills/daily-report/daily_calculation_spec.json` | 日报计算口径（v0.3） |
-| `C:/Users/69050/.claude/skills/daily-report/scripts/build_daily_snapshot.py` | 日级聚合脚本（8类解析+coverage） |
+| `.claude/skills/daily-report/daily_section_registry.json`（示例：`${USERPROFILE}/.claude/skills/daily-report/daily_section_registry.json`，或由 `CLAUDE_SKILLS_DIR` 指定） | 日报章节定义（v0.3） |
+| `.claude/skills/daily-report/daily_calculation_spec.json`（示例同上） | 日报计算口径（v0.3） |
+| `.claude/skills/daily-report/scripts/build_daily_snapshot.py`（示例同上） | 日级聚合脚本（8类解析+coverage） |
 | `D:/claudecode/monthly_report/skill/wip_daily_report.md` | 当前日报草稿 |
 | `D:/claudecode/monthly_report/skill/daily_snapshot.json` | 脚本输出的结构化数据 |
 
@@ -52,9 +52,9 @@ version: 0.4.0
 1. 确认数据目录：
    `D:/claudecode/monthly_report/data/<产品名>_<YYYY-MM-DD>/日常数据_<YYYYMMDD>/`
 
-2. 运行聚合脚本（默认要求覆盖 8 类必需 CSV；广告报表为可选自动解析）：
+2. 运行聚合脚本（默认要求覆盖 8 类必需 CSV；广告报表为可选自动解析）。将下方 `<SKILLS_DIR>` 替换为 `.claude/skills/daily-report`（Windows 示例：`%USERPROFILE%\.claude\skills\daily-report`；Unix 示例：`${HOME}/.claude/skills/daily-report`；或用 `CLAUDE_SKILLS_DIR` 环境变量指定）：
    ```bash
-   python "C:/Users/69050/.claude/skills/daily-report/scripts/build_daily_snapshot.py" \
+   python "<SKILLS_DIR>/scripts/build_daily_snapshot.py" \
      --input-dir "<CSV目录>" \
      --target-date "YYYY-MM-DD" \
      --output "D:/claudecode/monthly_report/skill/daily_snapshot.json" \
@@ -63,7 +63,7 @@ version: 0.4.0
 
 3. 强校验模式（推荐）：
    ```bash
-   python "C:/Users/69050/.claude/skills/daily-report/scripts/build_daily_snapshot.py" \
+   python "<SKILLS_DIR>/scripts/build_daily_snapshot.py" \
      --input-dir "<CSV目录>" \
      --target-date "YYYY-MM-DD" \
      --output "D:/claudecode/monthly_report/skill/daily_snapshot.json" \

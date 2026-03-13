@@ -7,13 +7,13 @@ parse_spin.py
 用法：
     python parse_spin.py --file <csv路径> --month 2026-02 [--prev-month 2026-01] [--top 10] [--daily 机台名称]
 """
-import csv, json, argparse
+import csv, json, sys, argparse
 from datetime import datetime
 from collections import defaultdict
 
 def month_of(date_str):
     try: return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
-    except: return None
+    except (ValueError, TypeError): return None
 
 def date_in_range(date_str, start_date=None, end_date=None, month=None):
     """支持两种模式：date range 或 month 前缀"""
@@ -22,7 +22,7 @@ def date_in_range(date_str, start_date=None, end_date=None, month=None):
     if '（' in s: s = s[:s.index('（')]
     try:
         d = datetime.strptime(s.strip(), '%Y-%m-%d').date()
-    except:
+    except (ValueError, TypeError):
         return False
     if start_date and end_date:
         sd = datetime.strptime(start_date, '%Y-%m-%d').date()
@@ -34,7 +34,7 @@ def date_in_range(date_str, start_date=None, end_date=None, month=None):
 
 def parse_num(s):
     try: return float(str(s).strip().replace(',', ''))
-    except: return 0.0
+    except (ValueError, TypeError): return 0.0
 
 def aggregate_by_slot(rows, month=None, start_date=None, end_date=None):
     slot_data = defaultdict(lambda: {'spin': 0.0, 'users': 0.0, 'gold': 0.0, 'bet_sum': 0.0, 'days': 0})
@@ -106,8 +106,18 @@ def main():
     sd, ed = args.start_date, args.end_date
     psd, ped = args.prev_start_date, args.prev_end_date
 
-    with open(args.file, encoding='utf-8-sig') as f:
-        rows = list(csv.DictReader(f))
+    try:
+        with open(args.file, encoding='utf-8-sig') as f:
+            rows = list(csv.DictReader(f))
+    except FileNotFoundError:
+        print(f'[ERROR] 文件未找到: {args.file}', file=sys.stderr)
+        sys.exit(1)
+    except UnicodeDecodeError as e:
+        print(f'[ERROR] 文件编码错误: {args.file}: {e}', file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f'[ERROR] 读取文件失败: {args.file}: {e}', file=sys.stderr)
+        sys.exit(1)
 
     cur = aggregate_by_slot(rows, month=args.month, start_date=sd, end_date=ed)
     result = {'month': args.month, 'top': args.top}

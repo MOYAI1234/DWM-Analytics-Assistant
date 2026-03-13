@@ -7,13 +7,13 @@ parse_iap.py
 用法：
     python parse_iap.py --file <csv路径> --month 2026-02 [--prev-month 2026-01]
 """
-import csv, json, argparse
+import csv, json, sys, argparse
 from datetime import datetime
 from collections import defaultdict
 
 def month_of(date_str):
     try: return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
-    except: return None
+    except (ValueError, TypeError): return None
 
 def date_in_range(date_str, start_date=None, end_date=None, month=None):
     """支持两种模式：date range 或 month 前缀"""
@@ -22,7 +22,7 @@ def date_in_range(date_str, start_date=None, end_date=None, month=None):
     if '（' in s: s = s[:s.index('（')]
     try:
         d = datetime.strptime(s.strip(), '%Y-%m-%d').date()
-    except:
+    except (ValueError, TypeError):
         return False
     if start_date and end_date:
         sd = datetime.strptime(start_date, '%Y-%m-%d').date()
@@ -35,68 +35,10 @@ def date_in_range(date_str, start_date=None, end_date=None, month=None):
 def parse_num(s):
     s = str(s).strip().replace(',', '')
     try: return float(s)
-    except: return 0.0
+    except (ValueError, TypeError): return 0.0
 
-def aggregate_by_location(rows, month):
-    """按点位聚合，忽略层级细分（层级数据保留在 by_tier）"""
-    loc_data = defaultdict(lambda: {'rev': 0, 'cnt': 0, 'users': set_proxy()})
-    tier_data = defaultdict(lambda: {'rev': 0, 'users': 0})
-    total = {'rev': 0, 'cnt': 0}
-
-    for r in rows:
-        if month_of(r.get('时间', '')) != month:
-            continue
-        loc = r.get('项目位置', '').strip()
-        tier = r.get('总付费金额', '').strip()
-        if loc in ('false', '', 'null'):
-            continue
-        rev = parse_num(r.get('付费总金额', 0))
-        cnt = parse_num(r.get('付费总次数', 0))
-        users = parse_num(r.get('付费总用户数', 0))
-
-        loc_data[loc]['rev'] += rev
-        loc_data[loc]['cnt'] += cnt
-        loc_data[loc]['users'] += users
-
-        tier_data[tier]['rev'] += rev
-        tier_data[tier]['users'] += users
-
-        total['rev'] += rev
-        total['cnt'] += cnt
-
-    # 去重：同一用户在多个层级可能被重复计，取 max 近似
-    result_loc = {}
-    for loc, d in loc_data.items():
-        arppu = round(d['rev'] / d['users'], 2) if d['users'] > 0 else 0
-        result_loc[loc] = {
-            'rev': round(d['rev'], 2),
-            'cnt': int(d['cnt']),
-            'users': int(d['users']),
-            'arppu': arppu
-        }
-
-    result_tier = {}
-    for tier, d in tier_data.items():
-        arppu = round(d['rev'] / d['users'], 2) if d['users'] > 0 else 0
-        result_tier[tier] = {
-            'rev': round(d['rev'], 2),
-            'users': int(d['users']),
-            'arppu': arppu,
-            'rev_pct': round(d['rev'] / total['rev'] * 100, 1) if total['rev'] > 0 else 0
-        }
-
-    return {
-        'total_rev': round(total['rev'], 2),
-        'total_cnt': int(total['cnt']),
-        'by_location': dict(sorted(result_loc.items(), key=lambda x: -x[1]['rev'])),
-        'by_tier': result_tier
-    }
-
-def set_proxy():
-    """用 float 累加代替 set，因为用户数已是聚合值"""
-    return 0.0
-
-# 修正：直接用累加而非 set
+# 移除已废弃的第一版 aggregate_by_location（含 set_proxy 调用）及 set_proxy 函数。
+# 以下为唯一有效实现：
 def aggregate_by_location(rows, month=None, start_date=None, end_date=None):
     loc_data = defaultdict(lambda: {'rev': 0.0, 'cnt': 0.0, 'users': 0.0})
     tier_data = defaultdict(lambda: {'rev': 0.0, 'users': 0.0})
@@ -190,8 +132,18 @@ def main():
     sd, ed = args.start_date, args.end_date
     psd, ped = args.prev_start_date, args.prev_end_date
 
-    with open(args.file, encoding='utf-8-sig') as f:
-        rows = list(csv.DictReader(f))
+    try:
+        with open(args.file, encoding='utf-8-sig') as f:
+            rows = list(csv.DictReader(f))
+    except FileNotFoundError:
+        print(f'[ERROR] 文件未找到: {args.file}', file=sys.stderr)
+        sys.exit(1)
+    except UnicodeDecodeError as e:
+        print(f'[ERROR] 文件编码错误: {args.file}: {e}', file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f'[ERROR] 读取文件失败: {args.file}: {e}', file=sys.stderr)
+        sys.exit(1)
 
     cur = aggregate_by_location(rows, month=args.month, start_date=sd, end_date=ed)
     result = {'month': args.month, 'current': cur}

@@ -17,8 +17,11 @@ def parse_num(s):
 
 def range_cols(headers, start_date=None, end_date=None, month=None):
     """从表头找出属于指定范围或月份的日期列"""
-    sd = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
-    ed = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+    try:
+        sd = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
+        ed = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+    except ValueError as exc:
+        raise ValueError(f'日期格式错误（需 YYYY-MM-DD）: {exc}') from exc
     cols = []
     for h in headers:
         try:
@@ -82,6 +85,16 @@ def main():
     sd, ed = args.start_date, args.end_date
     psd, ped = args.prev_start_date, args.prev_end_date
 
+    # 提前校验日期格式，避免 range_cols 内的 ValueError 在聚合深处才暴露
+    for date_arg, label in [(sd, '--start-date'), (ed, '--end-date'),
+                             (psd, '--prev-start-date'), (ped, '--prev-end-date')]:
+        if date_arg:
+            try:
+                datetime.strptime(date_arg, '%Y-%m-%d')
+            except ValueError:
+                print(f'[ERROR] {label} 日期格式错误（需 YYYY-MM-DD）: {date_arg!r}', file=sys.stderr)
+                sys.exit(1)
+
     try:
         with open(args.file, encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
@@ -95,6 +108,10 @@ def main():
         sys.exit(1)
     except Exception as e:
         print(f'[ERROR] 读取文件失败: {args.file}: {e}', file=sys.stderr)
+        sys.exit(1)
+
+    if not headers:
+        print(f'[ERROR] CSV 无有效表头，请检查文件: {args.file}', file=sys.stderr)
         sys.exit(1)
 
     cur = aggregate(rows, headers, month=args.month, start_date=sd, end_date=ed)

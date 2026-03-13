@@ -12,8 +12,12 @@ from datetime import datetime
 from collections import defaultdict
 
 def month_of(date_str):
-    try: return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
-    except (ValueError, TypeError): return None
+    if not isinstance(date_str, str) or not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
+    except (ValueError, TypeError):
+        return None
 
 def date_in_range(date_str, start_date=None, end_date=None, month=None):
     """支持两种模式：date range 或 month 前缀"""
@@ -33,8 +37,10 @@ def date_in_range(date_str, start_date=None, end_date=None, month=None):
     return False
 
 def parse_num(s):
-    try: return float(str(s).strip().replace(',', ''))
-    except (ValueError, TypeError): return 0.0
+    try:
+        return float(str(s).strip().replace(',', ''))
+    except (ValueError, TypeError):
+        return 0.0
 
 def aggregate_by_slot(rows, month=None, start_date=None, end_date=None):
     slot_data = defaultdict(lambda: {'spin': 0.0, 'users': 0.0, 'gold': 0.0, 'bet_sum': 0.0, 'days': 0})

@@ -9,7 +9,7 @@ CSV 结构：
 用法：
     python parse_big_r.py --file <csv路径> --month 2026-02 [--top 10] [--output <输出路径>]
 """
-import csv, json, sys, argparse
+import csv, json, argparse
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -54,6 +54,7 @@ def main():
     else:
         raise ValueError('必须提供 --month 或 --start-date + --end-date')
 
+    import sys
     try:
         with open(args.file, encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
@@ -64,7 +65,7 @@ def main():
     except UnicodeDecodeError as e:
         print(f'[ERROR] 文件编码错误: {args.file}: {e}', file=sys.stderr)
         sys.exit(1)
-    except Exception as e:
+    except (csv.Error, OSError) as e:
         print(f'[ERROR] 读取文件失败: {args.file}: {e}', file=sys.stderr)
         sys.exit(1)
 

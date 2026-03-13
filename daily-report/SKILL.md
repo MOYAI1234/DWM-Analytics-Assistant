@@ -11,7 +11,10 @@ version: 0.4.0
 # 日常数据监控报告生成器
 
 本 skill 的单一真源为 `.claude` 目录：
-- `.claude/skills/daily-report/`（即 `${USERPROFILE}/.claude/skills/daily-report/` 或 `${HOME}/.claude/skills/daily-report/`，也可通过环境变量 `CLAUDE_SKILLS_DIR` 自定义）
+- `.claude/skills/daily-report/`（即 `%USERPROFILE%\.claude\skills\daily-report\`（Windows）或 `${HOME}/.claude/skills/daily-report/`（Unix））
+- 若使用环境变量 `CLAUDE_SKILLS_DIR`，**必须将其指向 `daily-report` 目录本身**（即完整路径直到 `daily-report/`），而非其父目录 `.claude/skills/`。错误地指向父目录会导致脚本拼接路径时多出一级，找不到 `scripts/build_daily_snapshot.py`。
+  - Windows 示例：`set CLAUDE_SKILLS_DIR=C:\Users\<用户名>\.claude\skills\daily-report`
+  - Unix 示例：`export CLAUDE_SKILLS_DIR="${HOME}/.claude/skills/daily-report"`
 
 `daily_snapshot` 现已覆盖 8 类必需 CSV + 1 类可选广告 CSV，并输出 `_coverage` 矩阵，避免静默漏解析。
 同时新增数据新鲜度纠偏：

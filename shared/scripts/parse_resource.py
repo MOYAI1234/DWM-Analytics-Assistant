@@ -315,7 +315,7 @@ def main():
     except UnicodeDecodeError as e:
         log(f'[ERROR] 文件编码错误: {args.file}: {e}')
         sys.exit(1)
-    except Exception as e:
+    except (csv.Error, OSError) as e:
         log(f'[ERROR] 读取文件失败: {args.file}: {e}')
         sys.exit(1)
 

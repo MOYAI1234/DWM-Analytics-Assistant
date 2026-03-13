@@ -13,18 +13,28 @@ from datetime import datetime
 from collections import defaultdict
 
 def parse_pct(s):
-    s = s.strip().replace('%', '')
-    try: return float(s)
-    except (ValueError, TypeError): return None
+    if not isinstance(s, str):
+        return None
+    try:
+        return float(s.strip().replace('%', ''))
+    except (ValueError, TypeError):
+        return None
 
 def parse_num(s):
-    s = s.strip().replace(',', '').replace('$', '')
-    try: return float(s)
-    except (ValueError, TypeError): return None
+    if not isinstance(s, str):
+        return None
+    try:
+        return float(s.strip().replace(',', '').replace('$', ''))
+    except (ValueError, TypeError):
+        return None
 
 def month_of(date_str):
-    try: return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
-    except (ValueError, TypeError): return None
+    if not isinstance(date_str, str) or not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
+    except (ValueError, TypeError):
+        return None
 
 def date_in_range(date_str, start_date=None, end_date=None, month=None):
     """支持两种模式：date range 或 month 前缀"""
@@ -225,7 +235,7 @@ def main():
                         supplement_change[k] = pct_change(supplement_cur[k], supplement_prev.get(k))
                 if supplement_change:
                     result['supplement_change'] = supplement_change
-        except Exception as e:
+        except (OSError, UnicodeDecodeError, csv.Error) as e:
             print(f'[WARN] 基础数据其一读取失败: {e}', file=sys.stderr)
 
     out = json.dumps(result, ensure_ascii=False, indent=2)

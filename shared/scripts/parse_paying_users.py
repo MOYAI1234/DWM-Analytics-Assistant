@@ -9,18 +9,31 @@ parse_paying_users.py
 用法：
     python parse_paying_users.py --file <csv路径> --month 2026-02 [--prev-month 2026-01]
 """
-import csv, json, sys, argparse
+import csv, json, argparse
 from datetime import datetime
 from collections import defaultdict
 
 def parse_num(s):
-    try: return float(str(s).strip().replace(',', ''))
-    except (ValueError, TypeError): return None
+    try:
+        return float(str(s).strip().replace(',', ''))
+    except (ValueError, TypeError):
+        return None
+
+def month_dates(rows_header, month):
+    """从表头中找出属于指定月份的列名"""
+    dates = []
+    for col in rows_header:
+        try:
+            d = datetime.strptime(col.strip(), '%Y-%m-%d')
+            if d.strftime('%Y-%m') == month:
+                dates.append(col)
+        except:
+            pass
+    return dates
 
 def range_dates(rows_header, start_date=None, end_date=None, month=None):
-    """从表头找出属于指定范围或月份的日期列。
-    month_dates() 已废弃，由本函数统一处理月份过滤逻辑。
-    """
+    """从表头找出属于指定范围或月份的日期列"""
+    from datetime import date as date_cls
     sd = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
     ed = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
     dates = []
@@ -33,7 +46,7 @@ def range_dates(rows_header, start_date=None, end_date=None, month=None):
             elif month:
                 if d.strftime('%Y-%m') == month:
                     dates.append(col)
-        except (ValueError, TypeError):
+        except:
             pass
     return dates
 
@@ -63,21 +76,19 @@ def main():
     parser.add_argument('--output')
     args = parser.parse_args()
 
+    import sys
     try:
         with open(args.file, encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
-            # 必须在 list(reader) 之前读取 fieldnames，否则迭代器耗尽后返回 None
-            headers = reader.fieldnames or []
+            headers = reader.fieldnames or []  # 在 list(reader) 前捕获，避免迭代器耗尽后为 None
             rows = list(reader)
-            if not headers and rows:
-                headers = list(rows[0].keys())
     except FileNotFoundError:
         print(f'[ERROR] 文件未找到: {args.file}', file=sys.stderr)
         sys.exit(1)
     except UnicodeDecodeError as e:
         print(f'[ERROR] 文件编码错误: {args.file}: {e}', file=sys.stderr)
         sys.exit(1)
-    except Exception as e:
+    except (csv.Error, OSError) as e:
         print(f'[ERROR] 读取文件失败: {args.file}: {e}', file=sys.stderr)
         sys.exit(1)
 

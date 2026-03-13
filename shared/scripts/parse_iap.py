@@ -12,8 +12,12 @@ from datetime import datetime
 from collections import defaultdict
 
 def month_of(date_str):
-    try: return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
-    except (ValueError, TypeError): return None
+    if not isinstance(date_str, str) or not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
+    except (ValueError, TypeError):
+        return None
 
 def date_in_range(date_str, start_date=None, end_date=None, month=None):
     """支持两种模式：date range 或 month 前缀"""

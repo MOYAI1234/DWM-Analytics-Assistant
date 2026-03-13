@@ -52,13 +52,17 @@ version: 0.4.0
 1. 确认数据目录：
    `D:/claudecode/monthly_report/data/<产品名>_<YYYY-MM-DD>/日常数据_<YYYYMMDD>/`
 
-2. 运行聚合脚本（默认要求覆盖 8 类必需 CSV；广告报表为可选自动解析）。将下方 `<SKILLS_DIR>` 替换为 `.claude/skills/daily-report`（Windows 示例：`%USERPROFILE%\.claude\skills\daily-report`；Unix 示例：`${HOME}/.claude/skills/daily-report`；或用 `CLAUDE_SKILLS_DIR` 环境变量指定）：
+2. 运行聚合脚本（默认要求覆盖 8 类必需 CSV；广告报表为可选自动解析）。将下方占位符替换为本机实际路径，`<SKILLS_DIR>` 替换方式见首节说明；路径示例：
+
+   - Windows：`<OUTPUT_JSON_PATH>=D:/claudecode/monthly_report/skill/daily_snapshot.json`，`<CSV_MAPPING_PATH>=D:/claudecode/monthly_report/skill/csv_mapping.json`
+   - Unix：`<OUTPUT_JSON_PATH>=~/claudecode/monthly_report/skill/daily_snapshot.json`，`<CSV_MAPPING_PATH>=~/claudecode/monthly_report/skill/csv_mapping.json`
+
    ```bash
    python "<SKILLS_DIR>/scripts/build_daily_snapshot.py" \
      --input-dir "<CSV目录>" \
      --target-date "YYYY-MM-DD" \
-     --output "D:/claudecode/monthly_report/skill/daily_snapshot.json" \
-     --csv-mapping "D:/claudecode/monthly_report/skill/csv_mapping.json"
+     --output "<OUTPUT_JSON_PATH>" \
+     --csv-mapping "<CSV_MAPPING_PATH>"
    ```
 
 3. 强校验模式（推荐）：
@@ -66,8 +70,8 @@ version: 0.4.0
    python "<SKILLS_DIR>/scripts/build_daily_snapshot.py" \
      --input-dir "<CSV目录>" \
      --target-date "YYYY-MM-DD" \
-     --output "D:/claudecode/monthly_report/skill/daily_snapshot.json" \
-     --csv-mapping "D:/claudecode/monthly_report/skill/csv_mapping.json" \
+     --output "<OUTPUT_JSON_PATH>" \
+     --csv-mapping "<CSV_MAPPING_PATH>" \
      --expected-csv-count 8 \
      --strict
    ```

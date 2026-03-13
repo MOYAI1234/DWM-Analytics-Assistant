@@ -93,7 +93,7 @@ def main():
     except UnicodeDecodeError as e:
         print(f'[ERROR] 文件编码错误: {args.file}: {e}', file=sys.stderr)
         sys.exit(1)
-    except Exception as e:
+    except OSError as e:
         print(f'[ERROR] 读取文件失败: {args.file}: {e}', file=sys.stderr)
         sys.exit(1)
 

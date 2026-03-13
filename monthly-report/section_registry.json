@@ -35,7 +35,7 @@
         "是否需要按生命周期对齐视角分析",
         "是否需要按付费层级（小R/中R/大R）拆分"
       ],
-      "analysis_focus": "生命周期对齐后的留存结构 > 整体均值变化；付费层级分化 > 总量变化；重点标注30~90天付费用户异动",
+      "analysis_focus": "生命周期对齐后的留存结构 > 整体均值变化；付费层级分化 > 总量变化；重点标注30-90天付费用户异动",
       "format": "bullet with sub-bullets per R-tier"
     },
     {
@@ -67,7 +67,7 @@
       "platform": "all",
       "products": ["WOOHOO_CASINO"],
       "trigger_fields": ["钻石消耗", "钻石发放", "MiniGame", "doubleFreeGame", "ReSpinFreeGame"],
-      "csv_key": "bingo_feature_resource",
+      "csv_key": "paying_user_resource",
       "key_metrics": [
         "消耗端Top场景及环比",
         "发放端Top渠道及环比",

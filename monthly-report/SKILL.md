@@ -42,7 +42,6 @@ version: 1.0.0
 4. 清空或新建 `wip_report.md`，写入报告标题：
    ```
    # <产品名> <平台>月度复盘 - <月份>
-   # <月份> 月度复盘（<平台>）
    ```
 5. 向用户说明裁剪后的章节顺序，并提示：
    > "上月报告已读取完毕，请按章节顺序提供数据，或告知我需要从看板下载。"
@@ -100,7 +99,7 @@ print(f'解压完成：{os.path.basename(zips[0])} -> {actual_csv_dir}，共 {le
 解压成功后，运行一键聚合脚本：
 
 ```bash
-set PYTHONUTF8=1 && python D:/claudecode/monthly_report/skill/scripts/run_all.py \
+PYTHONUTF8=1 python D:/claudecode/monthly_report/skill/scripts/run_all.py \
   --data-dir "<actual_csv_dir>" \
   --month "<本月YYYY-MM>" \
   --prev-month "<上月YYYY-MM>" \

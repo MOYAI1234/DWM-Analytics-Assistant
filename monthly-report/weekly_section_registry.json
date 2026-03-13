@@ -126,7 +126,7 @@
       "platform": "all",
       "products": ["WOOHOO_CASINO"],
       "trigger_fields": ["钻石消耗", "钻石发放", "MiniGame", "doubleFreeGame", "ReSpinFreeGame"],
-      "csv_key": "bingo_feature_resource",
+      "csv_key": "paying_user_resource",
       "key_metrics": [
         "消耗端Top场景及周环比",
         "发放端Top渠道及周环比",

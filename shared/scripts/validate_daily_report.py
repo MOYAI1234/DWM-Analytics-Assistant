@@ -27,7 +27,8 @@ REQUIRED_SECTIONS = [
 def read_text(path: Path) -> str:
     if not path.exists():
         raise FileNotFoundError(f"file not found: {path}")
-    return path.read_text(encoding="utf-8")
+    # utf-8-sig: 自动去除可能存在的 UTF-8 BOM，保证 shebang 和 json.loads 不受影响
+    return path.read_text(encoding="utf-8-sig")
 
 
 def has_lifecycle_buckets(text: str) -> bool:
@@ -65,18 +66,63 @@ def count_tomorrow_actions(text: str) -> int:
     return cnt
 
 
+def _section_headings(text: str) -> set:
+    """Return the set of words found in markdown heading lines (## / ###)."""
+    headings: set = set()
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            # Remove leading '#' chars and whitespace to get the heading text
+            heading_text = stripped.lstrip("#").strip()
+            headings.add(heading_text)
+    return headings
+
+
+def _extract_section(text: str, section_name: str) -> str:
+    """Return the content between *section_name* heading and the next same-level heading."""
+    lines = text.splitlines()
+    start = -1
+    heading_prefix = ""
+    for i, ln in enumerate(lines):
+        stripped = ln.lstrip()
+        if stripped.startswith("#") and section_name in stripped:
+            # Capture the '#' prefix to detect next heading at same or higher level
+            heading_prefix = stripped[: len(stripped) - len(stripped.lstrip("#"))]
+            start = i + 1
+            break
+    if start == -1:
+        return ""
+    result = []
+    level = len(heading_prefix)
+    for ln in lines[start:]:
+        stripped = ln.lstrip()
+        if stripped.startswith("#"):
+            this_level = len(stripped) - len(stripped.lstrip("#"))
+            if this_level <= level:
+                break
+        result.append(ln)
+    return "\n".join(result)
+
+
 def validate_markdown(report_text: str):
     errors = []
     warnings = []
 
-    missing_sections = [s for s in REQUIRED_SECTIONS if s not in report_text]
+    # Check sections by heading lines only, not arbitrary substring match
+    headings = _section_headings(report_text)
+    missing_sections = [s for s in REQUIRED_SECTIONS if not any(s in h for h in headings)]
     if missing_sections:
         errors.append(f"missing sections: {', '.join(missing_sections)}")
 
-    if "D-1" not in report_text:
-        errors.append("resource/compare text missing D-1 marker")
-    if "D-7" not in report_text:
-        errors.append("resource/compare text missing D-7 marker")
+    # D-1 / D-7 must appear inside the "资源经济" section, not just anywhere in the file
+    resource_section = _extract_section(report_text, "资源经济")
+    if not resource_section:
+        errors.append("section '资源经济' not found; cannot check D-1/D-7 markers")
+    else:
+        if "D-1" not in resource_section:
+            errors.append("resource/compare text missing D-1 marker inside '资源经济' section")
+        if "D-7" not in resource_section:
+            errors.append("resource/compare text missing D-7 marker inside '资源经济' section")
 
     if not has_lifecycle_buckets(report_text):
         errors.append("lifecycle buckets missing required 0-30 / 30-120 / 120+ structure")
@@ -133,7 +179,10 @@ def main():
     snapshot_path = Path(args.snapshot)
 
     report_text = read_text(report_path)
-    snapshot = json.loads(read_text(snapshot_path))
+    try:
+        snapshot = json.loads(read_text(snapshot_path))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"[ERROR] snapshot JSON is invalid: {exc}") from exc
 
     md_errors, md_warnings = validate_markdown(report_text)
     sp_errors, sp_warnings = validate_snapshot(snapshot)

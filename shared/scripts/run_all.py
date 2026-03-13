@@ -70,11 +70,15 @@ def main():
     month = args.month
     prev = args.prev_month
 
-    # 构建日期范围透传参数
+    # 构建日期范围透传参数（配对校验：start/end 必须同时提供）
     date_args = []
-    if args.start_date:
+    if args.start_date or args.end_date:
+        if not (args.start_date and args.end_date):
+            parser.error('--start-date 和 --end-date 必须同时提供')
         date_args.extend([f'--start-date={args.start_date}', f'--end-date={args.end_date}'])
-    if args.prev_start_date:
+    if args.prev_start_date or args.prev_end_date:
+        if not (args.prev_start_date and args.prev_end_date):
+            parser.error('--prev-start-date 和 --prev-end-date 必须同时提供')
         date_args.extend([f'--prev-start-date={args.prev_start_date}', f'--prev-end-date={args.prev_end_date}'])
 
     print(f'数据目录: {data_dir}')
@@ -181,7 +185,8 @@ def main():
         print(f'[7/{total_steps}] 大R明细: 未找到文件（大R用户明细）')
 
     # 8. 基础数据其一（独立输出，已在步骤1中作为supplement整合）
-    if f2 and not extracted.get('基础大盘', {}).get('supplement'):
+    # 用 `or {}` 防御：run_parser 可能返回 None，直接 .get 会 AttributeError
+    if f2 and not (extracted.get('基础大盘') or {}).get('supplement'):
         print(f'[8/{total_steps}] 基础其一: 已在步骤1中整合' if f2 else f'[8/{total_steps}] 基础其一: 未找到文件')
     else:
         print(f'[8/{total_steps}] 基础其一: {"已整合到基础大盘" if f2 else "未找到文件"}')

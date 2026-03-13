@@ -304,10 +304,20 @@ def main():
     parser.add_argument('--prev-end-date',   default=None,   help='对比期结束 YYYY-MM-DD')
     args = parser.parse_args()
 
-    with open(args.file, encoding='utf-8-sig') as f:
-        reader = csv.reader(f)
-        headers = next(reader)
-        rows = list(reader)
+    try:
+        with open(args.file, encoding='utf-8-sig') as f:
+            reader = csv.reader(f)
+            headers = next(reader)
+            rows = list(reader)
+    except FileNotFoundError:
+        log(f'[ERROR] 文件未找到: {args.file}')
+        sys.exit(1)
+    except UnicodeDecodeError as e:
+        log(f'[ERROR] 文件编码错误: {args.file}: {e}')
+        sys.exit(1)
+    except Exception as e:
+        log(f'[ERROR] 读取文件失败: {args.file}: {e}')
+        sys.exit(1)
 
     # 格式自动检测
     if is_wide_format(headers):

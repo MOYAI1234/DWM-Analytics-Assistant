@@ -8,15 +8,29 @@ CSV 结构：行=指标名（分析指标列），列=日期（YYYY-MM-DD）。
 用法：
     python parse_promotion.py --file <csv路径> --month 2026-02 [--prev-month 2026-01]
 """
-import csv, json, sys, argparse
+import csv, json, argparse
 from datetime import datetime
+from pathlib import Path
 
-def parse_num(s):
-    try: return float(str(s).strip().replace(',', ''))
-    except (ValueError, TypeError): return None
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils import parse_num, pct_change
+
+def month_cols(headers, month):
+    """从表头中筛出属于指定月份的日期列"""
+    cols = []
+    for h in headers:
+        try:
+            d = datetime.strptime(h.strip(), '%Y-%m-%d')
+            if d.strftime('%Y-%m') == month:
+                cols.append(h)
+        except (ValueError, TypeError):
+            pass
+    return cols
 
 def range_cols(headers, start_date=None, end_date=None, month=None):
     """从表头找出属于指定范围或月份的日期列"""
+    from datetime import date as date_cls
     sd = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
     ed = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
     cols = []
@@ -82,20 +96,10 @@ def main():
     sd, ed = args.start_date, args.end_date
     psd, ped = args.prev_start_date, args.prev_end_date
 
-    try:
-        with open(args.file, encoding='utf-8-sig') as f:
-            reader = csv.DictReader(f)
-            headers = reader.fieldnames
-            rows = list(reader)
-    except FileNotFoundError:
-        print(f'[ERROR] 文件未找到: {args.file}', file=sys.stderr)
-        sys.exit(1)
-    except UnicodeDecodeError as e:
-        print(f'[ERROR] 文件编码错误: {args.file}: {e}', file=sys.stderr)
-        sys.exit(1)
-    except OSError as e:
-        print(f'[ERROR] 读取文件失败: {args.file}: {e}', file=sys.stderr)
-        sys.exit(1)
+    with open(args.file, encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        headers = reader.fieldnames
+        rows = list(reader)
 
     cur = aggregate(rows, headers, month=args.month, start_date=sd, end_date=ed)
     result = {'month': args.month, 'current': cur}

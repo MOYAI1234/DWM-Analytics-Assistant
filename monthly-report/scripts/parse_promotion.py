@@ -10,10 +10,11 @@ CSV 结构：行=指标名（分析指标列），列=日期（YYYY-MM-DD）。
 """
 import csv, json, argparse
 from datetime import datetime
+from pathlib import Path
 
-def parse_num(s):
-    try: return float(str(s).strip().replace(',', ''))
-    except: return None
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils import parse_num, pct_change
 
 def month_cols(headers, month):
     """从表头中筛出属于指定月份的日期列"""
@@ -23,7 +24,7 @@ def month_cols(headers, month):
             d = datetime.strptime(h.strip(), '%Y-%m-%d')
             if d.strftime('%Y-%m') == month:
                 cols.append(h)
-        except:
+        except (ValueError, TypeError):
             pass
     return cols
 
@@ -42,7 +43,7 @@ def range_cols(headers, start_date=None, end_date=None, month=None):
             elif month:
                 if d.strftime('%Y-%m') == month:
                     cols.append(h)
-        except:
+        except (ValueError, TypeError):
             pass
     return cols
 
@@ -62,7 +63,7 @@ def aggregate(rows, headers, month=None, start_date=None, end_date=None):
         metric = r.get('分析指标', '').strip()
         if not metric:
             continue
-        vals = [v for c in cols if (v := parse_num(r.get(c))) is not None]
+        vals = [parse_num(r.get(c)) for c in cols if parse_num(r.get(c)) is not None]
         if not vals:
             result[metric] = None
             continue

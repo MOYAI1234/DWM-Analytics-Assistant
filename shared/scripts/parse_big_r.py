@@ -12,14 +12,11 @@ CSV 结构：
 import csv, json, argparse
 from datetime import datetime, timedelta
 from collections import defaultdict
+from pathlib import Path
 
-
-def parse_num(s):
-    s = str(s).strip().replace(',', '')
-    try:
-        return float(s)
-    except (ValueError, TypeError):
-        return 0.0
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils import parse_num_or_zero
 
 
 def parse_date(s):
@@ -62,10 +59,10 @@ def main():
     for r in rows:
         uid = r.get('#account_id', '').strip()
         reg_time = parse_date(r.get('注册时间', ''))
-        total_pay = parse_num(r.get('总付费', 0))
-        max_pay = parse_num(r.get('最大付费', 0))
-        login_days = int(parse_num(r.get('登录天数', 0)))
-        pay_days = int(parse_num(r.get('付费天数', 0)))
+        total_pay = parse_num_or_zero(r.get('总付费', 0))
+        max_pay = parse_num_or_zero(r.get('最大付费', 0))
+        login_days = int(parse_num_or_zero(r.get('登录天数', 0)))
+        pay_days = int(parse_num_or_zero(r.get('付费天数', 0)))
         last_pay_date = parse_date(r.get('最后付费日期', ''))
         last_login_date = parse_date(r.get('最后登录日期', ''))
         churn_days = int(parse_num(r.get('流失天数', 0)))

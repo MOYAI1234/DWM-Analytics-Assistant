@@ -32,6 +32,10 @@ parse_resource.py
 """
 import csv, json, argparse, re, sys
 from collections import defaultdict
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils import parse_num, pct_change
 
 
 def log(msg):
@@ -40,22 +44,6 @@ def log(msg):
 
 
 # ─────────────────────────── 工具函数 ───────────────────────────
-
-def parse_num(s):
-    s = str(s).strip().replace(',', '')
-    if s in ('-', '', '—'):
-        return 0.0
-    try:
-        return float(s)
-    except ValueError:
-        return 0.0
-
-
-def pct_change(cur, prev):
-    if prev is None or prev == 0:
-        return None
-    return round((cur - prev) / abs(prev) * 100, 1)
-
 
 def find_col_index(headers, keyword, start=0):
     """从 start 位置开始找含 keyword 的列索引列表"""

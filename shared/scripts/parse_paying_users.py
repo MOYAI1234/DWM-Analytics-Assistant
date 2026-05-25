@@ -12,10 +12,11 @@ parse_paying_users.py
 import csv, json, argparse
 from datetime import datetime
 from collections import defaultdict
+from pathlib import Path
 
-def parse_num(s):
-    try: return float(str(s).strip().replace(',', ''))
-    except: return None
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils import parse_num, pct_change
 
 def month_dates(rows_header, month):
     """从表头中找出属于指定月份的列名"""
@@ -25,7 +26,7 @@ def month_dates(rows_header, month):
             d = datetime.strptime(col.strip(), '%Y-%m-%d')
             if d.strftime('%Y-%m') == month:
                 dates.append(col)
-        except:
+        except (ValueError, TypeError):
             pass
     return dates
 
@@ -44,7 +45,7 @@ def range_dates(rows_header, start_date=None, end_date=None, month=None):
             elif month:
                 if d.strftime('%Y-%m') == month:
                     dates.append(col)
-        except:
+        except (ValueError, TypeError):
             pass
     return dates
 

@@ -7,38 +7,15 @@ parse_iap.py
 用法：
     python parse_iap.py --file <csv路径> --month 2026-02 [--prev-month 2026-01]
 """
-import csv, json, sys, argparse
+import csv, json, argparse
 from datetime import datetime
 from collections import defaultdict
+from pathlib import Path
 
-def month_of(date_str):
-    try: return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
-    except (ValueError, TypeError): return None
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils import parse_num_or_zero, month_of, date_in_range, pct_change
 
-def date_in_range(date_str, start_date=None, end_date=None, month=None):
-    """支持两种模式：date range 或 month 前缀"""
-    s = str(date_str).strip()
-    if '(' in s: s = s[:s.index('(')]
-    if '（' in s: s = s[:s.index('（')]
-    try:
-        d = datetime.strptime(s.strip(), '%Y-%m-%d').date()
-    except (ValueError, TypeError):
-        return False
-    if start_date and end_date:
-        sd = datetime.strptime(start_date, '%Y-%m-%d').date()
-        ed = datetime.strptime(end_date, '%Y-%m-%d').date()
-        return sd <= d <= ed
-    if month:
-        return s.strip().startswith(month)
-    return False
-
-def parse_num(s):
-    s = str(s).strip().replace(',', '')
-    try: return float(s)
-    except (ValueError, TypeError): return 0.0
-
-# 移除已废弃的第一版 aggregate_by_location（含 set_proxy 调用）及 set_proxy 函数。
-# 以下为唯一有效实现：
 def aggregate_by_location(rows, month=None, start_date=None, end_date=None):
     loc_data = defaultdict(lambda: {'rev': 0.0, 'cnt': 0.0, 'users': 0.0})
     tier_data = defaultdict(lambda: {'rev': 0.0, 'users': 0.0})
@@ -51,9 +28,9 @@ def aggregate_by_location(rows, month=None, start_date=None, end_date=None):
         tier = r.get('总付费金额', '').strip()
         if loc in ('false', '', 'null'):
             continue
-        rev = parse_num(r.get('付费总金额', 0))
-        cnt = parse_num(r.get('付费总次数', 0))
-        users = parse_num(r.get('付费总用户数', 0))
+        rev = parse_num_or_zero(r.get('付费总金额', 0))
+        cnt = parse_num_or_zero(r.get('付费总次数', 0))
+        users = parse_num_or_zero(r.get('付费总用户数', 0))
 
         loc_data[loc]['rev'] += rev
         loc_data[loc]['cnt'] += cnt
@@ -92,11 +69,6 @@ def aggregate_by_location(rows, month=None, start_date=None, end_date=None):
         'by_tier': result_tier
     }
 
-def pct_change(cur, prev):
-    if cur is None or prev is None or prev == 0:
-        return None
-    return round((cur - prev) / abs(prev) * 100, 1)
-
 def compare(cur_loc, prev_loc):
     """为每个点位计算环比"""
     result = {}
@@ -132,18 +104,8 @@ def main():
     sd, ed = args.start_date, args.end_date
     psd, ped = args.prev_start_date, args.prev_end_date
 
-    try:
-        with open(args.file, encoding='utf-8-sig') as f:
-            rows = list(csv.DictReader(f))
-    except FileNotFoundError:
-        print(f'[ERROR] 文件未找到: {args.file}', file=sys.stderr)
-        sys.exit(1)
-    except UnicodeDecodeError as e:
-        print(f'[ERROR] 文件编码错误: {args.file}: {e}', file=sys.stderr)
-        sys.exit(1)
-    except OSError as e:
-        print(f'[ERROR] 读取文件失败: {args.file}: {e}', file=sys.stderr)
-        sys.exit(1)
+    with open(args.file, encoding='utf-8-sig') as f:
+        rows = list(csv.DictReader(f))
 
     cur = aggregate_by_location(rows, month=args.month, start_date=sd, end_date=ed)
     result = {'month': args.month, 'current': cur}

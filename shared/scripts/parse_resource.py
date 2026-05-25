@@ -35,7 +35,7 @@ from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from utils import parse_num, pct_change
+from utils import parse_num, parse_num_or_zero, pct_change
 
 
 def log(msg):
@@ -201,12 +201,12 @@ def parse_date_compare_format(headers, rows, start_date, end_date):
         # iOS 日期对比格式无 R 层级，统一用 'all'
         tier = 'all'
 
-        cc = parse_num(r[c_total_cur])  if c_total_cur  is not None and c_total_cur  < len(r) else 0
-        cp = parse_num(r[c_total_prev]) if c_total_prev is not None and c_total_prev < len(r) else 0
-        uc = parse_num(r[c_users_cur])  if c_users_cur  is not None and c_users_cur  < len(r) else 0
-        up = parse_num(r[c_users_prev]) if c_users_prev is not None and c_users_prev < len(r) else 0
-        mc = parse_num(r[c_median_cur]) if c_median_cur is not None and c_median_cur < len(r) else 0
-        mp = parse_num(r[c_median_prev])if c_median_prev is not None and c_median_prev < len(r) else 0
+        cc = parse_num_or_zero(r[c_total_cur])  if c_total_cur  is not None and c_total_cur  < len(r) else 0
+        cp = parse_num_or_zero(r[c_total_prev]) if c_total_prev is not None and c_total_prev < len(r) else 0
+        uc = parse_num_or_zero(r[c_users_cur])  if c_users_cur  is not None and c_users_cur  < len(r) else 0
+        up = parse_num_or_zero(r[c_users_prev]) if c_users_prev is not None and c_users_prev < len(r) else 0
+        mc = parse_num_or_zero(r[c_median_cur]) if c_median_cur is not None and c_median_cur < len(r) else 0
+        mp = parse_num_or_zero(r[c_median_prev])if c_median_prev is not None and c_median_prev < len(r) else 0
 
         if cc > 0 or cp > 0:
             d = consume_by_scene[reason][tier]
@@ -264,8 +264,8 @@ def parse_wide_format(headers, rows, start_date, end_date, prev_start_date, prev
         if not scene:
             continue
 
-        cur_val  = sum(parse_num(row[i]) for i in cur_cols  if i < len(row))
-        prev_val = sum(parse_num(row[i]) for i in prev_cols if i < len(row))
+        cur_val  = sum(parse_num_or_zero(row[i]) for i in cur_cols  if i < len(row))
+        prev_val = sum(parse_num_or_zero(row[i]) for i in prev_cols if i < len(row))
 
         if '消耗钻石总和' in metric:
             d = consume_by_scene[scene][tier]

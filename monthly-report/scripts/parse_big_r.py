@@ -16,7 +16,7 @@ from pathlib import Path
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from utils import parse_num_or_zero
+from utils import parse_num, parse_num_or_zero
 
 
 def parse_date(s):

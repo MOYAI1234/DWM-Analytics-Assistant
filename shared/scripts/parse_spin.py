@@ -14,7 +14,7 @@ from pathlib import Path
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from utils import parse_num_or_zero, date_in_range, pct_change
+from utils import parse_num, parse_num_or_zero, date_in_range, pct_change
 
 def aggregate_by_slot(rows, month=None, start_date=None, end_date=None):
     slot_data = defaultdict(lambda: {'spin': 0.0, 'users': 0.0, 'gold': 0.0, 'bet_sum': 0.0, 'days': 0})

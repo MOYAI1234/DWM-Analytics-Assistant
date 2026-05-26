@@ -58,9 +58,9 @@ def get_daily(rows, month=None, slot_name=None, start_date=None, end_date=None):
             continue
         daily.append({
             'date': r.get('时间', '').strip(),
-            'spin': int(parse_num(r.get('spin次数', 0))),
-            'users': int(parse_num(r.get('spin人数', 0))),
-            'avg_bet': round(parse_num(r.get('人均下注额', 0)), 0)
+            'spin': int(parse_num_or_zero(r.get('spin次数', 0))),
+            'users': int(parse_num_or_zero(r.get('spin人数', 0))),
+            'avg_bet': round(parse_num_or_zero(r.get('人均下注额', 0)), 0)
         })
     return sorted(daily, key=lambda x: x['date'])
 

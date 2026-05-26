@@ -76,11 +76,6 @@ def aggregate(rows, headers, month=None, start_date=None, end_date=None):
 
     return {'days': len(cols), 'metrics': result}
 
-def pct_change(cur, prev):
-    if cur is None or prev is None or prev == 0:
-        return None
-    return round((cur - prev) / abs(prev) * 100, 1)
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', required=True)

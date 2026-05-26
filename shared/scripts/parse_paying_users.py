@@ -54,11 +54,6 @@ def avg_of_dates(row, date_cols):
     vals = [parse_num(row.get(c)) for c in date_cols if parse_num(row.get(c)) is not None]
     return round(sum(vals) / len(vals), 2) if vals else None
 
-def pct_change(cur, prev):
-    if cur is None or prev is None or prev == 0:
-        return None
-    return round((cur - prev) / abs(prev) * 100, 1)
-
 # 生命周期段的排序顺序
 TIER_ORDER = ['0~7', '7~30', '30~60', '60~90', '90~120', '120~150',
               '150~180', '180~210', '210~240', '240~270', '270~300', '300+', '300~∞']

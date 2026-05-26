@@ -215,8 +215,8 @@ def parse_date_compare_format(headers, rows, start_date, end_date):
             if mc > 0: d['median_cur'] += mc * uc; d['median_count'] += uc
             if mp > 0: d['median_prev'] += mp * up; d['median_count_prev'] += up
 
-        dc = parse_num(r[d_total_cur])  if d_total_cur  is not None and d_total_cur  < len(r) else 0
-        dp = parse_num(r[d_total_prev]) if d_total_prev is not None and d_total_prev < len(r) else 0
+        dc = parse_num_or_zero(r[d_total_cur])  if d_total_cur  is not None and d_total_cur  < len(r) else 0
+        dp = parse_num_or_zero(r[d_total_prev]) if d_total_prev is not None and d_total_prev < len(r) else 0
         if dc > 0 or dp > 0:
             distribute_by_scene[reason][tier]['cur']  += dc
             distribute_by_scene[reason][tier]['prev'] += dp

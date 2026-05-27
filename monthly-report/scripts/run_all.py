@@ -17,7 +17,7 @@ import os, sys, json, argparse, subprocess
 from pathlib import Path
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'shared'))
 from utils import find_csv
 
 def run_parser(script, args_list):

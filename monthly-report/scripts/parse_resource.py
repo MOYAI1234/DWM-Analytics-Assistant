@@ -34,7 +34,7 @@ import csv, json, argparse, re, sys
 from collections import defaultdict
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'shared'))
 from utils import parse_num, parse_num_or_zero, pct_change
 
 

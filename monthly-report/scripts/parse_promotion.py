@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'shared'))
 from utils import parse_num, pct_change
 
 def month_cols(headers, month):

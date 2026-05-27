@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 validate_daily_report.py
 Pre-archive quality gate for daily report markdown.

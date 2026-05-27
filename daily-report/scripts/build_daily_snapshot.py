@@ -19,12 +19,15 @@ Optional CSV types (parsed when present):
 
 import argparse
 import csv
-import glob
 import json
 import os
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "shared"))
+from utils import parse_num, pct_change, find_csv, clean_date_str
 
 try:
     import pandas as pd
@@ -83,28 +86,6 @@ def load_csv_keywords(mapping_path):
     return result
 
 
-def find_csv(data_dir, keyword):
-    """Find CSV by keyword in filename, return most recently modified match."""
-    pattern = os.path.join(str(data_dir), f"*{keyword}*.csv")
-    matches = glob.glob(pattern)
-    if not matches:
-        return None
-    return sorted(matches, key=os.path.getmtime, reverse=True)[0]
-
-
-def safe_float(val):
-    """Convert to float, handling commas, $, %, etc."""
-    if val is None:
-        return None
-    s = str(val).strip().replace(",", "").replace("$", "").replace("%", "")
-    if s in ("", "-", "—", "null", "N/A"):
-        return None
-    try:
-        return float(s)
-    except (ValueError, TypeError):
-        return None
-
-
 def pct(a, b):
     """Percentage change: (a - b) / b. Returns None if not computable."""
     if a is None or b is None or b == 0:
@@ -123,15 +104,6 @@ def build_comparison(current_val, d1_val, d7_val, avg7_val):
         "chg_d7": pct(current_val, d7_val),
         "chg_avg7": pct(current_val, avg7_val),
     }
-
-
-def clean_date_str(s):
-    """Strip parenthetical weekday suffix: '2026-01-01(四)' -> '2026-01-01'."""
-    s = str(s).strip()
-    for bracket in ["(", "（"]:
-        if bracket in s:
-            s = s[: s.index(bracket)]
-    return s.strip()
 
 
 def parse_date_col(df, col):
@@ -243,8 +215,8 @@ def parse_spin(csv_path, target):
     def day_agg(date_val):
         total_spin = total_gold = 0.0
         for r in rows_by_date[date_val]:
-            total_spin += safe_float(r.get("spin次数")) or 0
-            total_gold += safe_float(r.get("消耗金币")) or 0
+            total_spin += parse_num(r.get("spin次数")) or 0
+            total_gold += parse_num(r.get("消耗金币")) or 0
         return total_spin, total_gold
 
     def avg_window(start_dt, end_dt_exclusive):
@@ -283,9 +255,9 @@ def parse_spin(csv_path, target):
             name = r.get("机台名称", "").strip()
             if not name:
                 continue
-            spin_val = int(safe_float(r.get("spin次数")) or 0)
-            users_val = int(safe_float(r.get("spin人数")) or 0)
-            gold_val = int(safe_float(r.get("消耗金币")) or 0)
+            spin_val = int(parse_num(r.get("spin次数")) or 0)
+            users_val = int(parse_num(r.get("spin人数")) or 0)
+            gold_val = int(parse_num(r.get("消耗金币")) or 0)
             if name not in out:
                 out[name] = {"机台名称": name, "spin次数": 0, "spin人数": 0, "消耗金币": 0}
             out[name]["spin次数"] += spin_val
@@ -337,8 +309,8 @@ def parse_iap_daily(csv_path, target):
             loc = r.get("项目位置", "").strip()
             if loc in ("false", "", "null"):
                 continue
-            rev += safe_float(r.get("付费总金额")) or 0
-            users += safe_float(r.get("付费总用户数")) or 0
+            rev += parse_num(r.get("付费总金额")) or 0
+            users += parse_num(r.get("付费总用户数")) or 0
         arppu = round(rev / users, 2) if users > 0 else 0
         return rev, users, arppu
 
@@ -378,8 +350,8 @@ def parse_iap_daily(csv_path, target):
                 continue
             if loc not in out:
                 out[loc] = {"rev": 0.0, "users": 0.0}
-            out[loc]["rev"] += safe_float(r.get("付费总金额")) or 0
-            out[loc]["users"] += safe_float(r.get("付费总用户数")) or 0
+            out[loc]["rev"] += parse_num(r.get("付费总金额")) or 0
+            out[loc]["users"] += parse_num(r.get("付费总用户数")) or 0
         return out
 
     cur_loc = day_loc_agg(d_s)
@@ -442,7 +414,7 @@ def parse_promo_daily(csv_path, target, anchor_offset_days=0):
         for r in rows:
             name = r.get("分析指标", "").strip()
             if metric_keyword in name:
-                return safe_float(r.get(date_col_name))
+                return parse_num(r.get(date_col_name))
         return None
 
     d = pd.to_datetime(target).normalize() - pd.Timedelta(days=anchor_offset_days)
@@ -551,7 +523,7 @@ def parse_ads_daily(csv_path, target):
     d7_date = date_str(anchor_dt - pd.Timedelta(days=7))
 
     def getv(row, day):
-        return safe_float(row.get(day))
+        return parse_num(row.get(day))
 
     by_point = {}
     by_type_raw = {}
@@ -769,7 +741,7 @@ def parse_paying_users(csv_path, target):
             tier = (r.get("事件与注册相差天数", "") or "").strip()
             if tier in ("", "阶段汇总"):
                 continue
-            v = safe_float(r.get(day))
+            v = parse_num(r.get(day))
             if v is not None:
                 vals.append(v)
         return vals
@@ -803,11 +775,11 @@ def parse_paying_users(csv_path, target):
         tier = (r.get("事件与注册相差天数", "") or "").strip()
         if not tier:
             continue
-        v = safe_float(r.get(d_s))
+        v = parse_num(r.get(d_s))
         if v is None:
             continue
         tier_vals.append({"tier": tier, "active_users": v})
-        v_d1 = safe_float(r.get(d1_s))
+        v_d1 = parse_num(r.get(d1_s))
         if v_d1 is not None:
             tier_vals_d1.append({"tier": tier, "active_users": v_d1})
     result["top_lifecycle_tiers"] = sorted(tier_vals, key=lambda x: -x["active_users"])[:5]
@@ -848,7 +820,7 @@ def _parse_resource_date_series(dict_rows, header_date_map, date_cols, target):
         for raw_h, canon_day in header_date_map.items():
             if canon_day != day:
                 continue
-            v = safe_float(row.get(raw_h))
+            v = parse_num(row.get(raw_h))
             if v is not None:
                 return v
         return None
@@ -921,12 +893,12 @@ def _parse_resource_single_period(rows, headers):
     period_col = headers[2]
     consume_rows = [r for r in rows if len(r) > 2 and str(r[1]).strip() == "消耗钻石总和"]
     grant_rows = [r for r in rows if len(r) > 2 and str(r[1]).strip() == "发放钻石总和"]
-    consume_total = sum(safe_float(r[2]) or 0 for r in consume_rows)
-    grant_total = sum(safe_float(r[2]) or 0 for r in grant_rows)
+    consume_total = sum(parse_num(r[2]) or 0 for r in consume_rows)
+    grant_total = sum(parse_num(r[2]) or 0 for r in grant_rows)
     reason_rank = []
     for r in consume_rows:
         reason = str(r[0]).strip()
-        v = safe_float(r[2]) or 0
+        v = parse_num(r[2]) or 0
         if reason and v > 0:
             reason_rank.append({"reason": reason, "current": round(v, 2), "previous": None, "chg": None})
     reason_rank = sorted(reason_rank, key=lambda x: -x["current"])[:8]
@@ -973,10 +945,10 @@ def _parse_resource_dual_period(rows, headers, compare_col):
         cur_period = cur_period or (str(r[1]).strip() if len(r) > 1 else None)
         prev_period = prev_period or (str(r[compare_col]).strip() if len(r) > compare_col else None)
 
-        c_cur = safe_float(r[c_total_cur]) or 0
-        c_prev = safe_float(r[c_total_prev]) or 0
-        d_cur = safe_float(r[d_total_cur]) or 0
-        d_prev = safe_float(r[d_total_prev]) or 0
+        c_cur = parse_num(r[c_total_cur]) or 0
+        c_prev = parse_num(r[c_total_prev]) or 0
+        d_cur = parse_num(r[d_total_cur]) or 0
+        d_prev = parse_num(r[d_total_prev]) or 0
 
         total_consume_cur += c_cur
         total_consume_prev += c_prev
@@ -1060,7 +1032,7 @@ def parse_big_r(csv_path):
         rows = list(csv.DictReader(f))
 
     def fnum(row, key):
-        return safe_float(row.get(key)) or 0.0
+        return parse_num(row.get(key)) or 0.0
 
     users = []
     for r in rows:

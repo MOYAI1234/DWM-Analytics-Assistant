@@ -11,37 +11,18 @@ parse_basic.py
 import csv, json, sys, argparse
 from datetime import datetime
 from collections import defaultdict
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'shared'))
+from utils import parse_num, month_of, date_in_range, pct_change
+
 
 def parse_pct(s):
-    s = s.strip().replace('%', '')
-    try: return float(s)
-    except: return None
-
-def parse_num(s):
-    s = s.strip().replace(',', '').replace('$', '')
-    try: return float(s)
-    except: return None
-
-def month_of(date_str):
-    try: return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
-    except: return None
-
-def date_in_range(date_str, start_date=None, end_date=None, month=None):
-    """支持两种模式：date range 或 month 前缀"""
-    s = str(date_str).strip()
-    if '(' in s: s = s[:s.index('(')]
-    if '（' in s: s = s[:s.index('（')]
+    s = str(s).strip().replace('%', '')
     try:
-        d = datetime.strptime(s.strip(), '%Y-%m-%d').date()
-    except:
-        return False
-    if start_date and end_date:
-        sd = datetime.strptime(start_date, '%Y-%m-%d').date()
-        ed = datetime.strptime(end_date, '%Y-%m-%d').date()
-        return sd <= d <= ed
-    if month:
-        return s.strip().startswith(month)
-    return False
+        return float(s)
+    except (ValueError, TypeError):
+        return None
 
 def aggregate(rows, month=None, start_date=None, end_date=None):
     data = [r for r in rows if date_in_range(r.get('日期',''), start_date, end_date, month)]
@@ -50,15 +31,15 @@ def aggregate(rows, month=None, start_date=None, end_date=None):
     n = len(data)
 
     def avg(field):
-        vals = [v for r in data if (v := parse_num(r.get(field, ''))) is not None]
+        vals = [parse_num(r.get(field,'')) for r in data if parse_num(r.get(field,'')) is not None]
         return round(sum(vals)/len(vals), 2) if vals else None
 
     def total(field):
-        vals = [v for r in data if (v := parse_num(r.get(field, ''))) is not None]
+        vals = [parse_num(r.get(field,'')) for r in data if parse_num(r.get(field,'')) is not None]
         return round(sum(vals), 2) if vals else None
 
     def avg_pct(field):
-        vals = [v for r in data if (v := parse_pct(r.get(field, ''))) is not None]
+        vals = [parse_pct(r.get(field,'')) for r in data if parse_pct(r.get(field,'')) is not None]
         return round(sum(vals)/len(vals), 2) if vals else None
 
     return {

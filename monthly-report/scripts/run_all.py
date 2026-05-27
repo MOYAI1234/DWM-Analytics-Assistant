@@ -8,23 +8,17 @@ run_all.py
 
 示例：
     python run_all.py \
-      --data-dir "D:/workspace/mobile_game_reports/data/DEMO_CASINO_iOS_26年3月/月报_20260302" \
+      --data-dir "D:/claudecode/monthly_report/data/WOOHOO_CASINO_iOS_26年3月/月报_20260302" \
       --month 2026-02 \
       --prev-month 2026-01 \
-      --output "D:/workspace/mobile_game_reports/skill/extracted_data.json"
+      --output "D:/claudecode/monthly_report/skill/extracted_data.json"
 """
-import os, sys, json, argparse, glob, subprocess
+import os, sys, json, argparse, subprocess
+from pathlib import Path
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-def find_csv(data_dir, keyword):
-    """按关键字模糊匹配 CSV 文件名"""
-    pattern = os.path.join(data_dir, f'*{keyword}*.csv')
-    matches = glob.glob(pattern)
-    if not matches:
-        return None
-    # 取最新的
-    return sorted(matches, key=os.path.getmtime, reverse=True)[0]
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / 'shared'))
+from utils import find_csv
 
 def run_parser(script, args_list):
     """运行子脚本并返回 JSON 结果"""
@@ -45,7 +39,7 @@ def run_parser(script, args_list):
         lines = result.stdout.strip().split('\n')
         for line in reversed(lines):
             try: return json.loads(line)
-            except: pass
+            except (ValueError, TypeError): pass
         print(f'[WARN] {script} 输出无法解析为 JSON')
         if result.stdout:
             print(f'  stdout 前 300 字符: {result.stdout[:300]}')

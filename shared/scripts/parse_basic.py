@@ -11,37 +11,18 @@ parse_basic.py
 import csv, json, sys, argparse
 from datetime import datetime
 from collections import defaultdict
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils import parse_num, month_of, date_in_range, pct_change
+
 
 def parse_pct(s):
-    s = s.strip().replace('%', '')
-    try: return float(s)
-    except (ValueError, TypeError): return None
-
-def parse_num(s):
-    s = s.strip().replace(',', '').replace('$', '')
-    try: return float(s)
-    except (ValueError, TypeError): return None
-
-def month_of(date_str):
-    try: return datetime.strptime(date_str.strip(), '%Y-%m-%d').strftime('%Y-%m')
-    except (ValueError, TypeError): return None
-
-def date_in_range(date_str, start_date=None, end_date=None, month=None):
-    """支持两种模式：date range 或 month 前缀"""
-    s = str(date_str).strip()
-    if '(' in s: s = s[:s.index('(')]
-    if '（' in s: s = s[:s.index('（')]
+    s = str(s).strip().replace('%', '')
     try:
-        d = datetime.strptime(s.strip(), '%Y-%m-%d').date()
+        return float(s)
     except (ValueError, TypeError):
-        return False
-    if start_date and end_date:
-        sd = datetime.strptime(start_date, '%Y-%m-%d').date()
-        ed = datetime.strptime(end_date, '%Y-%m-%d').date()
-        return sd <= d <= ed
-    if month:
-        return s.strip().startswith(month)
-    return False
+        return None
 
 def aggregate(rows, month=None, start_date=None, end_date=None):
     data = [r for r in rows if date_in_range(r.get('日期',''), start_date, end_date, month)]
@@ -182,29 +163,17 @@ def main():
     sd, ed = args.start_date, args.end_date
     psd, ped = args.prev_start_date, args.prev_end_date
 
-    try:
-        with open(args.file, encoding='utf-8-sig') as f:
-            rows = list(csv.DictReader(f))
-    except FileNotFoundError:
-        print(f'[ERROR] 文件未找到: {args.file}', file=sys.stderr)
-        sys.exit(1)
-    except UnicodeDecodeError as e:
-        print(f'[ERROR] 文件编码错误: {args.file}: {e}', file=sys.stderr)
-        sys.exit(1)
-    except OSError as e:
-        print(f'[ERROR] 读取文件失败: {args.file}: {e}', file=sys.stderr)
-        sys.exit(1)
+    with open(args.file, encoding='utf-8-sig') as f:
+        rows = list(csv.DictReader(f))
 
     cur = aggregate(rows, month=args.month, start_date=sd, end_date=ed)
     prev = aggregate(rows, month=args.prev_month, start_date=psd, end_date=ped) if (args.prev_month or psd) else None
 
-    result = {'month': args.month}
-    if cur:
-        result['current'] = cur
-        if prev:
-            result['prev_month'] = args.prev_month
-            result['previous'] = prev
-            result['change'] = {k: pct_change(cur.get(k), prev.get(k)) for k in cur if isinstance(cur.get(k), (int, float))}
+    result = {'month': args.month, 'current': cur}
+    if prev:
+        result['prev_month'] = args.prev_month
+        result['previous'] = prev
+        result['change'] = {k: pct_change(cur.get(k), prev.get(k)) for k in cur if isinstance(cur.get(k), (int, float))}
 
     # 整合基础数据其一的补充字段
     if args.file2:
